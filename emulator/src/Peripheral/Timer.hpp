@@ -32,6 +32,7 @@ namespace casioemu
 		void Tick();
 		void TickAfterInterrupts();
 		void DivideTicks();
+		void Uninitialise();
 	};
 }
 

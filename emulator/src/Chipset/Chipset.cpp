@@ -251,6 +251,28 @@ namespace casioemu
 
 	void Chipset::ConstructPeripherals()
 	{
+		//Only tested on fx-991cnx
+		BLKCON_mask = emulator.hardware_id == HW_CLASSWIZ ? 0x1F : 0xFF;
+		region_BLKCON.Setup(0xF028, 1, "Chipset/BLKCON0", this, [](MMURegion* region, size_t) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			return (uint8_t)(chipset->data_BLKCON & chipset->BLKCON_mask);
+		}, [](MMURegion* region, size_t, uint8_t data) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			data &= chipset->BLKCON_mask;
+			chipset->data_BLKCON = data;
+			for(auto peripheral : chipset->peripherals) {
+				int block_bit = peripheral->GetBlockBit();
+				if(block_bit == -1)
+					continue;
+				if((1 << block_bit) > chipset->BLKCON_mask)
+					PANIC("Invalid BLKCON0 bit %d\n", block_bit);
+				if(data & (1 << block_bit))
+					peripheral->Uninitialise();
+				else
+					peripheral->Initialise();
+			}
+		}, emulator);
+
 		peripherals.push_front(new ROMWindow(emulator));
 		peripherals.push_front(new BatteryBackedRAM(emulator));
 		peripherals.push_front(CreateScreen(emulator));
@@ -266,6 +288,8 @@ namespace casioemu
 
 	void Chipset::DestructPeripherals()
 	{
+		region_BLKCON.Kill();
+
 		for (auto &peripheral : peripherals)
 		{
 			peripheral->Uninitialise();
@@ -298,6 +322,7 @@ namespace casioemu
 		ResetClockGenerator();
 
 		SegmentAccess = false;
+		data_BLKCON = 0;
 
 		for (auto &peripheral : peripherals)
 			peripheral->Reset();
@@ -527,6 +552,9 @@ namespace casioemu
 		for (auto peripheral : peripherals) {
 			switch (peripheral->GetClockType())
 			{
+			case CLOCK_UNDEFINED:
+				peripheral->Tick();
+				break;
 			case CLOCK_LSCLK:
 				if(LTBCReset)
 					peripheral->ResetLSCLK();
@@ -542,7 +570,6 @@ namespace casioemu
 					peripheral->Tick();
 				break;
 			default:
-				peripheral->Tick();
 				break;
 			}
 		}

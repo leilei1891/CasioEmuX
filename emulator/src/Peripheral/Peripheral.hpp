@@ -12,7 +12,8 @@ namespace casioemu
 		CLOCK_UNDEFINED = 0,
 		CLOCK_LSCLK = 1,
 		CLOCK_HSCLK = 2,
-		CLOCK_SYSCLK = 3
+		CLOCK_SYSCLK = 3,
+		CLOCK_STOPPED = 4
 	};
 
 	class Peripheral
@@ -28,7 +29,11 @@ namespace casioemu
 		 */
 		bool require_frame;
 
+		//Set this value for peripherals controlled by BLKCON
+		bool enabled = false;
+
 		int clock_type = CLOCK_SYSCLK;
+		int block_bit = -1;
 
 	public:
 		Peripheral(Emulator &emulator);
@@ -42,6 +47,7 @@ namespace casioemu
 		virtual bool GetRequireFrame();
 		virtual void ResetLSCLK();
 		virtual int GetClockType();
+		virtual int GetBlockBit();
 		virtual ~Peripheral();
 	};
 }

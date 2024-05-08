@@ -377,8 +377,11 @@ namespace casioemu
 
 		require_frame = true;
 
-		if (button.type == Button::BT_POWER && button.pressed && !old_pressed)
-			emulator.chipset.Reset();
+		if (button.type == Button::BT_POWER && button.pressed && !old_pressed) {
+			if(!(emulator.hardware_id == HW_CLASSWIZ && (emulator.chipset.data_FCON & 0x03) == 0x03))
+				emulator.chipset.Reset();
+		}
+			
 		if (button.type == Button::BT_BUTTON && button.pressed != old_pressed)
 		{
 			if (real_hardware)

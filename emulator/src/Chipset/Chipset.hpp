@@ -63,6 +63,8 @@ namespace casioemu
 		uint32_t data_int_mask, data_int_pending;
 		static const size_t managed_interrupt_base = 4;
 
+		MMURegion region_BLKCON;
+
 		MMURegion region_FCON, region_LTBR, region_HTBR, region_LTBADJ;
 		int LSCLKFreq;
 
@@ -81,6 +83,8 @@ namespace casioemu
 
 		InterruptSource* MaskableInterrupts;
 		size_t EffectiveMICount;
+
+		uint8_t data_BLKCON, BLKCON_mask;
 
 		uint8_t data_FCON, data_LTBR, data_HTBR;
 		uint16_t data_LTBADJ;

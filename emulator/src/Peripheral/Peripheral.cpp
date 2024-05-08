@@ -52,4 +52,9 @@ namespace casioemu
 	{
 		return clock_type;
 	}
+
+	int Peripheral::GetBlockBit()
+	{
+		return block_bit;
+	}
 }

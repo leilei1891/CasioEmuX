@@ -11,15 +11,28 @@ namespace casioemu
 {
 	void Timer::Initialise()
 	{
+		if(enabled)
+			return;
+
+		enabled = true;
+
 		real_hardware = emulator.GetModelInfo("real_hardware");
 		cycles_per_second = emulator.GetCyclesPerSecond();
 
 		TimerFreqDiv = 1;
 		clock_type = CLOCK_LSCLK;
 
+		block_bit = 3;
+
 		EmuStopped = false;
 		emulator.chipset.EmuTimerSkipped = false;
 		
+		ext_to_int_counter = 0;
+		data_interval = 0;
+		data_counter = 0;
+		data_control = 0;
+		data_F024 = 0;
+
 		region_interval.Setup(0xF020, 2, "Timer/TM0D", &data_interval, MMURegion::DefaultRead<uint16_t>, [](MMURegion *region, size_t offset, uint8_t data) {
 			uint16_t *value = (uint16_t *)(region->userdata);
 			*value &= ~(((uint16_t)0xFF) << ((offset - region->base) * 8));
@@ -133,5 +146,19 @@ namespace casioemu
 			}
 			++data_counter;
 		}
+	}
+
+	void Timer::Uninitialise() {
+		if(!enabled)
+			return;
+
+		enabled = false;
+
+		clock_type = CLOCK_STOPPED;
+
+		region_interval.Kill();
+		region_counter.Kill();
+		region_F024.Kill();
+		region_control.Kill();
 	}
 }
