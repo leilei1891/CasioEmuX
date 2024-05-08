@@ -15,12 +15,15 @@
 #include "../Peripheral/Miscellaneous.hpp"
 #include "../Peripheral/Timer.hpp"
 #include "../Peripheral/BCDCalc.hpp"
+#include "../Peripheral/PowerSupply.hpp"
+#include "../Peripheral/TimerBaseCounter.hpp"
 
 #include "../Gui/ui.hpp"
 
 #include <fstream>
 #include <algorithm>
 #include <cstring>
+#include <cmath>
 
 namespace casioemu
 {
@@ -46,6 +49,7 @@ namespace casioemu
 	Chipset::~Chipset()
 	{
 		DestructPeripherals();
+		DestructClockGenerator();
 		DestructInterruptSFR();
 
 		delete &mmu;
@@ -124,6 +128,127 @@ namespace casioemu
 		region_int_mask.Kill();
 	}
 
+	void Chipset::ConstructClockGenerator() {
+		LSCLKFreq = 16384;
+
+		ResetClockGenerator();
+
+		region_FCON.Setup(0xF00A, 1, "ClockGenerator/FCON", this, [](MMURegion *region, size_t) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			return chipset->data_FCON;
+		}, [](MMURegion *region, size_t, uint8_t data) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			uint8_t OSCLK = (data & 0x70) >> 4;
+			chipset->data_FCON = data & 0x73;
+			chipset->ClockDiv = std::pow(2, OSCLK == 0 ? OSCLK : OSCLK - 1);
+			chipset->LSCLKMode = (chipset->data_FCON & 0x03) == 1 ? true : false;
+		}, emulator);
+		region_LTBR.Setup(0xF00C, 1, "TimerBaseCounter/LTBR", this, [](MMURegion *region, size_t) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			return chipset->data_LTBR;
+		}, [](MMURegion *region, size_t, uint8_t data) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			chipset->data_LTBR = 0;
+			chipset->LTBCReset = true;
+			chipset->LSCLKTick = true;
+			chipset->LSCLKTickCounter = 0;
+			chipset->LSCLKTimeCounter = 0;
+			chipset->LSCLKFreqAddition = 0;
+		}, emulator);
+		region_HTBR.Setup(0xF00D, 1, "ClockGenerator/HTBR", this, [](MMURegion *region, size_t) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			return chipset->data_HTBR;
+		}, [](MMURegion *region, size_t, uint8_t data) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			chipset->data_HTBR = 0;
+			chipset->HTBCReset = true;
+			chipset->HSCLKTick = true;
+			chipset->HSCLKTickCounter = 0;
+		}, emulator);
+		region_LTBADJ.Setup(0xF006, 2, "TimerBaseCounter/LTBADJ", this, [](MMURegion *region, size_t offset) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			offset -= region->base;
+			return (uint8_t)((chipset->data_LTBADJ & 0x7FF) >> offset * 8);
+		}, [](MMURegion *region, size_t offset, uint8_t data) {
+			Chipset* chipset = (Chipset*)region->userdata;
+			offset -= region->base;
+			chipset->data_LTBADJ = (chipset->data_LTBADJ & (~(0xFF << offset * 8))) | (data << offset * 8);
+			chipset->data_LTBADJ &= 0x7FF;
+			if(chipset->data_LTBADJ != 0)
+				chipset->LSCLKThresh = (chipset->LSCLKFreq * (1 + 2097152 / (short)chipset->data_LTBADJ)) / chipset->emulator.GetCyclesPerSecond();
+			else
+				chipset->LSCLKThresh = 0;
+		}, emulator);
+	}
+
+	void Chipset::GenerateTickForClock() {
+		//Generate HSCLK Tick
+		if(run_mode != RM_STOP) {
+			if(++HSCLKTickCounter >= ClockDiv) {
+				HSCLKTick = true;
+				if(++HSCLKTimeCounter >= HTBROutputCount) {
+					data_HTBR++;
+					HSCLKTimeCounter = 0;
+				}
+				if(++SYSCLKTickCounter >= 2) {
+					SYSCLKTick = true;
+					SYSCLKTickCounter = 0;
+				}
+				HSCLKTickCounter = 0;
+			}
+		}
+
+		//Generate LSCLK Tick
+		if(LSCLKMode) {
+			if(++LSCLKTickCounter >= emulator.GetCyclesPerSecond() / LSCLKFreq + LSCLKFreqAddition) {
+				LSCLKTick = true;
+				LSCLKTickCounter = 0;
+				if(LSCLKFreqAddition != 0) {
+					LSCLKFreqAddition = 0;
+					LSCLKTimeCounter = 0;
+				}
+				if(LSCLKThresh > 0) {
+					if(++LSCLKTimeCounter >= LSCLKThresh)
+						LSCLKFreqAddition = 1;
+				} else if(LSCLKThresh < 0) {
+					if(++LSCLKTimeCounter >= -LSCLKThresh)
+						LSCLKFreqAddition = -1;
+				}
+			}
+		}
+	}
+
+	void Chipset::ResetClockGenerator() {
+		data_FCON = 0;
+		data_LTBR = 0;
+		data_HTBR = 0;
+		data_LTBADJ = 0;
+
+		ClockDiv = 1;
+		LSCLKMode = false;
+		
+		LSCLKTick = false;
+		HSCLKTick = false;
+		SYSCLKTick = false;
+		LTBCReset = false;
+		HTBCReset = false;
+
+		LSCLKTickCounter = 0;
+		LSCLKTimeCounter = 0;
+		LSCLKFreqAddition = 0;
+		LSCLKThresh = 0;
+		HSCLKTickCounter = 0;
+		HSCLKTimeCounter = 0;
+		SYSCLKTickCounter = 0;
+	}
+
+	void Chipset::DestructClockGenerator() {
+		region_FCON.Kill();
+		region_LTBR.Kill();
+		region_HTBR.Kill();
+		region_LTBADJ.Kill();
+	}
+
 	void Chipset::ConstructPeripherals()
 	{
 		peripherals.push_front(new ROMWindow(emulator));
@@ -133,6 +258,8 @@ namespace casioemu
 		peripherals.push_front(new StandbyControl(emulator));
 		peripherals.push_front(new Miscellaneous(emulator));
 		peripherals.push_front(new Timer(emulator));
+		peripherals.push_front(new PowerSupply(emulator));
+		peripherals.push_front(new TimerBaseCounter(emulator));
 		if (emulator.hardware_id == HW_CLASSWIZ_II)
 			peripherals.push_front(new BCDCalc(emulator));
 	}
@@ -157,6 +284,7 @@ namespace casioemu
 			peripheral->Initialise();
 
 		ConstructInterruptSFR();
+		ConstructClockGenerator();
 
 		cpu.SetupInternals();
 		mmu.SetupInternals();
@@ -166,6 +294,8 @@ namespace casioemu
 	{
 		ResetInterruptSFR();
 		isMIBlocked = false;
+
+		ResetClockGenerator();
 
 		for (auto &peripheral : peripherals)
 			peripheral->Reset();
@@ -215,6 +345,12 @@ namespace casioemu
 			return;
 		interrupts_active[INT_EMULATOR] = true;
 		pending_interrupt_count++;
+	}
+
+	void Chipset::RequestNonmaskable() {
+		SetInterruptPendingSFR(INT_NONMASKABLE, true);
+		if (data_int_mask & 1)
+			RaiseNonmaskable();
 	}
 
 	void Chipset::RaiseNonmaskable()
@@ -384,8 +520,30 @@ namespace casioemu
 	{
 		// * TODO: decrement delay counter, return if it's not 0
 
-		for (auto peripheral : peripherals)
-			peripheral->Tick();
+		GenerateTickForClock();
+
+		for (auto peripheral : peripherals) {
+			switch (peripheral->GetClockType())
+			{
+			case CLOCK_LSCLK:
+				if(LTBCReset)
+					peripheral->ResetLSCLK();
+				if(LSCLKTick)
+					peripheral->Tick();
+				break;
+			case CLOCK_HSCLK:
+				if(HSCLKTick)
+					peripheral->Tick();
+				break;
+			case CLOCK_SYSCLK:
+				if(SYSCLKTick)
+					peripheral->Tick();
+				break;
+			default:
+				peripheral->Tick();
+				break;
+			}
+		}
 
 		if (pending_interrupt_count) {
 			AcceptInterrupt();
@@ -393,8 +551,14 @@ namespace casioemu
 				peripheral->TickAfterInterrupts();
 		}
 
-		if (run_mode == RM_RUN)
+		if (run_mode == RM_RUN && SYSCLKTick) {
 			cpu.Next();
+		}
+
+		LSCLKTick = false;
+		LTBCReset = false;
+		HSCLKTick = false;
+		SYSCLKTick = false;
 	}
 
 	void Chipset::UIEvent(SDL_Event &event)

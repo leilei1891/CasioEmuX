@@ -43,4 +43,13 @@ namespace casioemu
 	{
 		return require_frame;
 	}
+
+	void Peripheral::ResetLSCLK()
+	{
+	}
+
+	int Peripheral::GetClockType()
+	{
+		return clock_type;
+	}
 }

@@ -104,6 +104,8 @@ namespace casioemu
 		 */
 		Chipset &chipset;
 
+		float BatteryVoltage, SolarPanelVoltage;
+
 		bool Running();
 		void HandleMemoryError();
 		void Shutdown();

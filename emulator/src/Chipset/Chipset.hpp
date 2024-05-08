@@ -51,12 +51,23 @@ namespace casioemu
 		void ConstructPeripherals();
 		void DestructPeripherals();
 
+		void ConstructClockGenerator();
+		void GenerateTickForClock();
+		void ResetClockGenerator();
+		void DestructClockGenerator();
+
 		void ConstructInterruptSFR();
 		void ResetInterruptSFR();
 		void DestructInterruptSFR();
 		MMURegion region_int_mask, region_int_pending;
 		uint32_t data_int_mask, data_int_pending;
 		static const size_t managed_interrupt_base = 4;
+
+		MMURegion region_FCON, region_LTBR, region_HTBR, region_LTBADJ;
+		int LSCLKFreq;
+
+		long long LSCLKTickCounter, HSCLKTickCounter, HSCLKTimeCounter, SYSCLKTickCounter, LSCLKTimeCounter, LSCLKThresh;
+		int LSCLKFreqAddition;
 
 	public:
 		Chipset(Emulator &emulator);
@@ -70,6 +81,17 @@ namespace casioemu
 
 		InterruptSource* MaskableInterrupts;
 		size_t EffectiveMICount;
+
+		uint8_t data_FCON, data_LTBR, data_HTBR;
+		uint16_t data_LTBADJ;
+		
+		int ClockDiv;
+		bool LSCLKMode;
+
+		bool LSCLKTick, HSCLKTick, SYSCLKTick;
+		bool LTBCReset, HTBCReset;
+
+		const int HTBROutputCount = 128;
 
 		bool isMIBlocked;
 
@@ -91,6 +113,7 @@ namespace casioemu
 		void Stop();
 		bool GetRunningState();
 		void RaiseEmulator();
+		void RequestNonmaskable();
 		void RaiseNonmaskable();
 		void ResetNonmaskable();
 		void RaiseMaskable(size_t index);

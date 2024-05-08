@@ -7,6 +7,14 @@ namespace casioemu
 {
 	class Emulator;
 
+	enum ClockType
+	{
+		CLOCK_UNDEFINED = 0,
+		CLOCK_LSCLK = 1,
+		CLOCK_HSCLK = 2,
+		CLOCK_SYSCLK = 3
+	};
+
 	class Peripheral
 	{
 	protected:
@@ -20,6 +28,8 @@ namespace casioemu
 		 */
 		bool require_frame;
 
+		int clock_type = CLOCK_SYSCLK;
+
 	public:
 		Peripheral(Emulator &emulator);
 		virtual void Initialise();
@@ -30,6 +40,8 @@ namespace casioemu
 		virtual void UIEvent(SDL_Event &event);
 		virtual void Reset();
 		virtual bool GetRequireFrame();
+		virtual void ResetLSCLK();
+		virtual int GetClockType();
 		virtual ~Peripheral();
 	};
 }

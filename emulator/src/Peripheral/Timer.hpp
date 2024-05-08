@@ -12,12 +12,15 @@ namespace casioemu
 		uint16_t data_counter, data_interval;
 		uint8_t data_F024, data_control;
 
-		size_t IntIndex = 4;
+		size_t TM0INT = 4;
 
 		bool raise_required;
 		bool real_hardware;
 		bool EmuStopped;
 		uint64_t ext_to_int_counter, ext_to_int_next, ext_to_int_int_done;
+
+		size_t TimerFreqDiv;
+
 		unsigned int cycles_per_second;
 		static const uint64_t ext_to_int_frequency = 10000;
 

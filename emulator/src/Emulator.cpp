@@ -31,11 +31,14 @@ namespace casioemu
 			PANIC("Unknown hardware id %d\n", hardware_id);
 		this->hardware_id = (HardwareId)hardware_id;
 
-		cycles_per_second = hardware_id == HW_ES_PLUS ? 128 * 1024 : hardware_id == HW_CLASSWIZ ? 1024 * 1024 : 2048 * 1024;
+		cycles_per_second = hardware_id == HW_ES_PLUS ? 128 * 1024 * 2 : hardware_id == HW_CLASSWIZ ? 1024 * 1024 * 2 : 2048 * 1024 * 2;
 		timer_interval = 20;
 
 		cycles.Setup(cycles_per_second, timer_interval);
 		chipset.Setup();
+
+		BatteryVoltage = 1.5;
+		SolarPanelVoltage = 1.5;
 
 		interface_background = GetModelInfo("rsd_interface");
 		if (interface_background.dest.x != 0 || interface_background.dest.y != 0)

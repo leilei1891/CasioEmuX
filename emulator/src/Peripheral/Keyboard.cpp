@@ -27,6 +27,7 @@ namespace casioemu
 		real_hardware = emulator.GetModelInfo("real_hardware");
 
 		IntRaised = false;
+		clock_type = CLOCK_UNDEFINED;
 
 		region_ki.Setup(0xF040, 1, "Keyboard/KI", &keyboard_in, MMURegion::DefaultRead<uint8_t>, MMURegion::IgnoreWrite, emulator);
 
@@ -295,7 +296,7 @@ namespace casioemu
 	void Keyboard::Tick()
 	{
 		if (has_input && (!IntRaised)) {
-			emulator.chipset.MaskableInterrupts[IntIndex].TryRaise();
+			emulator.chipset.MaskableInterrupts[XI0INT].TryRaise();
 			IntRaised = true;
 		}
 	}
