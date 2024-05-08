@@ -153,6 +153,10 @@ code            Access code. (By words, only use even address,
 data            Access data. (By bytes)
 data:watch      Set write watchpoint.
 data:rwatch     Set read watchpoint.
+
+power.bt        Battery voltage.
+power.sp        Solar panel voltage.
+
 help()          Print this help message.
 
 addposttick     Add a function as post-tick handler. (wrapper over emu:post_tick)
@@ -192,9 +196,9 @@ nrop            Next "ROP instruction".
 keyinj(file,pti	Short for Keyboard:KeyInject(filename,ptime,dtime).
 me,dtime)
 press(keycode)	Short for Keyboard:PressKey(keycode).
-relkey()	Short for Keyboard:ReleaseAll().
+relkey()        Short for Keyboard:ReleaseAll().
 keylog(file)	Short for Keyboard:StartKeyLog(filename).
-stoplog()	Short for Keyboard:StopKeyLog().
+stoplog()       Short for Keyboard:StopKeyLog().
 
 overclock	Set emulator clock speed to certain times the original.
 ]])

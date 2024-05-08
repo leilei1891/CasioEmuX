@@ -46,6 +46,39 @@ namespace casioemu {
             PowerSupply *powersupply = (PowerSupply*)region->userdata;
             powersupply->data_SPIndicator = (data & 0x0F);
         }, emulator);
+
+        *(PowerSupply **)lua_newuserdata(emulator.lua_state, sizeof(PowerSupply *)) = this;
+        lua_newtable(emulator.lua_state);
+        lua_pushcfunction(emulator.lua_state, [](lua_State *lua_state) {
+			PowerSupply *powersupply = *(PowerSupply **)lua_topointer(lua_state, 1);
+            std::string index = lua_tostring(lua_state, 2);
+            if(index == "bt") {
+                lua_pushnumber(lua_state, powersupply->emulator.BatteryVoltage);
+                return 1;
+            }
+            if(index == "sp") {
+                lua_pushnumber(lua_state, powersupply->emulator.SolarPanelVoltage);
+                return 1;
+            }
+			return 0;
+		});
+        lua_setfield(emulator.lua_state, -2, "__index");
+        lua_pushcfunction(emulator.lua_state, [](lua_State *lua_state) {
+			PowerSupply *powersupply = *(PowerSupply **)lua_topointer(lua_state, 1);
+            std::string index = lua_tostring(lua_state, 2);
+            if(index == "bt") {
+                powersupply->emulator.BatteryVoltage = lua_tonumber(lua_state, 3);
+                return 0;
+            }
+            if(index == "sp") {
+                powersupply->emulator.SolarPanelVoltage = lua_tonumber(lua_state, 3);
+                return 0;
+            }
+			return 0;
+		});
+        lua_setfield(emulator.lua_state, -2, "__newindex");
+        lua_setmetatable(emulator.lua_state, -2);
+        lua_setglobal(emulator.lua_state, "power");
     }
 
     void PowerSupply::StartTest(bool TestMode, bool AutoRep, float thresh) {

@@ -41,6 +41,8 @@ namespace casioemu
 		me_mmu = this;
 		real_hardware = emulator.GetModelInfo("real_hardware");
 
+		emulator.chipset.SegmentAccess = false;
+
 		*(MMU **)lua_newuserdata(emulator.lua_state, sizeof(MMU *)) = this;
 		lua_newtable(emulator.lua_state);
 		lua_pushcfunction(emulator.lua_state, [](lua_State *lua_state) {
@@ -205,6 +207,11 @@ namespace casioemu
 		
 		size_t segment_index = offset >> 16;
 		size_t segment_offset = offset & 0xFFFF;
+
+		if(emulator.hardware_id == HW_CLASSWIZ && real_hardware) {
+			if(segment_index > 3 && (!emulator.chipset.SegmentAccess))
+				return 0;
+		}
 
 		MemoryByte *segment = segment_dispatch[segment_index];
 		if (!segment)

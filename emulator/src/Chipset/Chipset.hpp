@@ -93,6 +93,8 @@ namespace casioemu
 
 		const int HTBROutputCount = 128;
 
+		bool SegmentAccess;
+
 		bool isMIBlocked;
 
 		bool EmuTimerSkipped;

@@ -297,6 +297,8 @@ namespace casioemu
 
 		ResetClockGenerator();
 
+		SegmentAccess = false;
+
 		for (auto &peripheral : peripherals)
 			peripheral->Reset();
 

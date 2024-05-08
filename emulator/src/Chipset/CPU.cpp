@@ -227,6 +227,7 @@ namespace casioemu
 		if (impl_hint & H_DW)
 			impl_last_dsr = impl_operands[0].value;
 
+		impl_last_dsr &= dsr_mask;
 		reg_dsr = impl_last_dsr;
 	}
 
@@ -249,6 +250,9 @@ namespace casioemu
 
 		impl_csr_mask = emulator.GetModelInfo("csr_mask");
 		real_hardware = emulator.GetModelInfo("real_hardware");
+		
+		//Only tested on fx-991cnx
+		dsr_mask = emulator.hardware_id == HW_CLASSWIZ ? 0x1F : 0xFF;
 
 		fetch_addition = 2;
 	}

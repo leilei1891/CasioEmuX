@@ -17,8 +17,19 @@ namespace casioemu
 		region_dsr.Setup(0xF000, 1, "Miscellaneous/DSR", this, [](MMURegion *region, size_t) {
 			return (uint8_t)((Miscellaneous *)region->userdata)->emulator.chipset.cpu.impl_last_dsr;
 		}, [](MMURegion *region, size_t, uint8_t data) {
-			((Miscellaneous *)region->userdata)->emulator.chipset.cpu.impl_last_dsr = data;
+			Miscellaneous* self = (Miscellaneous *)region->userdata;
+			self->emulator.chipset.cpu.impl_last_dsr = data & self->emulator.chipset.cpu.dsr_mask;
 		}, emulator);
+
+		if(emulator.hardware_id == HW_CLASSWIZ) {
+			//Only tested on fx-991cnx
+			region_F004.Setup(0xF004, 1, "Miscellaneous/DataSegAccess", this, [](MMURegion* region, size_t) {
+				return (uint8_t)((Miscellaneous*)region->userdata)->emulator.chipset.SegmentAccess;
+			}, [](MMURegion* region, size_t, uint8_t data) {
+				Miscellaneous* self = (Miscellaneous *)region->userdata;
+				self->emulator.chipset.SegmentAccess = data & 1;
+			}, emulator);
+		}
 
 		// * TODO: figure out what these are
 
