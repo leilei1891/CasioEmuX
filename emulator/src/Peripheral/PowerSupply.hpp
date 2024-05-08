@@ -27,8 +27,8 @@ namespace casioemu {
 
         const float SolarPanelThresh = 1.0;
 
-        const size_t TestRoutineTicks = 131072;
-        const size_t InitTicks = 16384;
+        const size_t TestRoutineTicks = 262144;
+        const size_t InitTicks = 32768;
 
     public:
         using Peripheral::Peripheral;

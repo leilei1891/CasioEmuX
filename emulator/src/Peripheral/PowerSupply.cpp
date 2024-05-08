@@ -9,6 +9,8 @@
 
 namespace casioemu {
     void PowerSupply::Initialise() {
+        clock_type = CLOCK_UNDEFINED;
+        
         BLDMode = 0;
         BLDControl = 0;
         threshold = 0;
