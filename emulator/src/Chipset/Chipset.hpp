@@ -88,6 +88,9 @@ namespace casioemu
 
 		uint8_t data_FCON, data_LTBR, data_HTBR;
 		uint16_t data_LTBADJ;
+
+		//1Hz-128Hz Low Speed Clock output.Corresponding bit is set to 1 on output and got reset on the next LSCLK tick.
+		uint8_t LSCLK_output;
 		
 		int ClockDiv;
 		bool LSCLKMode;

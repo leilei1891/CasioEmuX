@@ -17,6 +17,7 @@
 #include "../Peripheral/BCDCalc.hpp"
 #include "../Peripheral/PowerSupply.hpp"
 #include "../Peripheral/TimerBaseCounter.hpp"
+#include "../Peripheral/RealTimeClock.hpp"
 
 #include "../Gui/ui.hpp"
 
@@ -222,6 +223,7 @@ namespace casioemu
 		data_FCON = 0;
 		data_LTBR = 0;
 		data_HTBR = 0;
+		LSCLK_output = 0;
 		data_LTBADJ = 0;
 
 		ClockDiv = 1;
@@ -282,6 +284,7 @@ namespace casioemu
 		peripherals.push_front(new Timer(emulator));
 		peripherals.push_front(new PowerSupply(emulator));
 		peripherals.push_front(new TimerBaseCounter(emulator));
+		peripherals.push_front(new RealTimeClock(emulator));
 		if (emulator.hardware_id == HW_CLASSWIZ_II)
 			peripherals.push_front(new BCDCalc(emulator));
 	}

@@ -70,6 +70,11 @@ namespace casioemu
 
 	void Timer::Reset()
 	{
+		if(!enabled) {
+			Initialise();
+			return;
+		}
+
 		ext_to_int_counter = 0;
 		if(!real_hardware) {
 			ext_to_int_next = 0;

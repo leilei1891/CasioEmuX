@@ -10,32 +10,45 @@ namespace casioemu
         clock_type = CLOCK_LSCLK;
 
         LTBRCounter = 0;
-        current_LTBR = 0;
+        current_output = 0;
+        LTBR_reset_tick = false;
     }
 
     void TimerBaseCounter::Reset() {
-        current_LTBR = 0;
         LTBRCounter = 0;
+        current_output = 0;
+        LTBR_reset_tick = false;
     }
 
     void TimerBaseCounter::Tick() {
+        if(LTBR_reset_tick) {
+            LTBR_reset_tick = false;
+            return;
+        }
+
+        emulator.chipset.LSCLK_output = 0;
+
         if(++LTBRCounter >= LTBROutputCount) {
             LTBRCounter = 0;
             emulator.chipset.data_LTBR++;
-            current_LTBR = emulator.chipset.data_LTBR;
-            if(!(current_LTBR & 0x02) && ((current_LTBR - 1) & 0x02))
+            current_output = emulator.chipset.LSCLK_output = (emulator.chipset.data_LTBR - 1) & (~emulator.chipset.data_LTBR);
+            
+            if(current_output & 0x02)
                 emulator.chipset.MaskableInterrupts[L256SINT].TryRaise();
-            if(!(current_LTBR & 0x08) && ((current_LTBR - 1) & 0x08))
+            if(current_output & 0x08)
                 emulator.chipset.MaskableInterrupts[L1024SINT].TryRaise();
-            if(!(current_LTBR & 0x20) && ((current_LTBR - 1) & 0x20))
+            if(current_output & 0x20)
                 emulator.chipset.MaskableInterrupts[L4096SINT].TryRaise();
-            if(!(current_LTBR & 0x80) && ((current_LTBR - 1) & 0x80))
+            if(current_output & 0x80)
                 emulator.chipset.MaskableInterrupts[L16384SINT].TryRaise();
         }
     }
 
     void TimerBaseCounter::ResetLSCLK() {
-        current_LTBR = 0;
+        LTBRCounter = 0;
+        emulator.chipset.LSCLK_output = 0xFF;
+        LTBR_reset_tick = true;
+
         emulator.chipset.MaskableInterrupts[L256SINT].TryRaise();
         emulator.chipset.MaskableInterrupts[L1024SINT].TryRaise();
         emulator.chipset.MaskableInterrupts[L4096SINT].TryRaise();

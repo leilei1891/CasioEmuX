@@ -13,10 +13,11 @@ namespace casioemu
         size_t L4096SINT = 7;
         size_t L16384SINT = 8;
 
-        uint8_t current_LTBR;
+        uint8_t current_output;
+        bool LTBR_reset_tick;
 
         size_t LTBRCounter;
-        const size_t LTBROutputCount = 128;
+        const size_t LTBROutputCount = 64;
 
 	public:
 		using Peripheral::Peripheral;
