@@ -84,13 +84,18 @@ namespace casioemu
 		InterruptSource* MaskableInterrupts;
 		size_t EffectiveMICount;
 
+		bool WDT_enabled = false;
+
 		uint8_t data_BLKCON, BLKCON_mask;
 
 		uint8_t data_FCON, data_LTBR, data_HTBR;
 		uint16_t data_LTBADJ;
 
-		//1Hz-128Hz Low Speed Clock output.Corresponding bit is set to 1 on output and got reset on the next LSCLK tick.
+		//0.5Hz-64Hz Low Speed Clock output.Corresponding bit is set to 1 on output and got reset on the next LSCLK tick.
 		uint8_t LSCLK_output;
+
+		//64Hz-8kHz output.
+		uint8_t HSCLK_output;
 		
 		int ClockDiv;
 		bool LSCLKMode;

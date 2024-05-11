@@ -33,13 +33,13 @@ namespace casioemu
             emulator.chipset.data_LTBR++;
             current_output = emulator.chipset.LSCLK_output = (emulator.chipset.data_LTBR - 1) & (~emulator.chipset.data_LTBR);
             
-            if(current_output & 0x02)
+            if(current_output & 0x01)
                 emulator.chipset.MaskableInterrupts[L256SINT].TryRaise();
-            if(current_output & 0x08)
+            if(current_output & 0x04)
                 emulator.chipset.MaskableInterrupts[L1024SINT].TryRaise();
-            if(current_output & 0x20)
+            if(current_output & 0x10)
                 emulator.chipset.MaskableInterrupts[L4096SINT].TryRaise();
-            if(current_output & 0x80)
+            if(current_output & 0x40)
                 emulator.chipset.MaskableInterrupts[L16384SINT].TryRaise();
         }
     }

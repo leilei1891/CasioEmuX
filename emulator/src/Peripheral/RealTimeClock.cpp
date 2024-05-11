@@ -170,13 +170,13 @@ namespace casioemu
         RTCSEC_carry = false;
 
         //Accept 2Hz LSCLK output
-        if(emulator.chipset.LSCLK_output & 0x40) {
+        if(emulator.chipset.LSCLK_output & 0x20) {
             if((RTCCON & 0x06) == 0x02)
                 emulator.chipset.MaskableInterrupts[RTCINT].TryRaise();
         }
 
         //Accept 1Hz LSCLK output
-        if(emulator.chipset.LSCLK_output & 0x80) {
+        if(emulator.chipset.LSCLK_output & 0x40) {
             if((RTCCON & 0x06) == 0x04)
                 emulator.chipset.MaskableInterrupts[RTCCON].TryRaise();
             

@@ -18,6 +18,7 @@
 #include "../Peripheral/PowerSupply.hpp"
 #include "../Peripheral/TimerBaseCounter.hpp"
 #include "../Peripheral/RealTimeClock.hpp"
+#include "../Peripheral/WatchdogTimer.hpp"
 
 #include "../Gui/ui.hpp"
 
@@ -74,7 +75,7 @@ namespace casioemu
 		}, [](MMURegion *region, size_t offset, uint8_t data) {
 			offset -= region->base;
 			Chipset *chipset = (Chipset*)region->userdata;
-			size_t mask = (1 << (chipset->EffectiveMICount + 1)) - 2;
+			size_t mask = (1 << (chipset->EffectiveMICount + 1)) - (chipset->WDT_enabled ? 1 : 2);
 			chipset->data_int_mask = (chipset->data_int_mask & (~(0xFF << (offset * 8)))) | (data << (offset * 8));
 			chipset->data_int_mask &= mask;
 			for(size_t i = 0; i < chipset->EffectiveMICount; i++) {
@@ -95,7 +96,7 @@ namespace casioemu
 		}, [](MMURegion *region, size_t offset, uint8_t data) {
 			offset -= region->base;
 			Chipset *chipset = (Chipset*)region->userdata;
-			size_t mask = (1 << (chipset->EffectiveMICount + 1)) - 2;
+			size_t mask = (1 << (chipset->EffectiveMICount + 1)) - (chipset->WDT_enabled ? 1 : 2);
 			chipset->data_int_pending = (chipset->data_int_pending & (~(0xFF << (offset * 8)))) | (data << (offset * 8));
 			chipset->data_int_pending &= mask;
 			for(size_t i = 0; i < chipset->EffectiveMICount; i++) {
@@ -162,6 +163,7 @@ namespace casioemu
 		}, [](MMURegion *region, size_t, uint8_t data) {
 			Chipset* chipset = (Chipset*)region->userdata;
 			chipset->data_HTBR = 0;
+			chipset->HSCLK_output = 0xFF;
 			chipset->HTBCReset = true;
 			chipset->HSCLKTick = true;
 			chipset->HSCLKTickCounter = 0;
@@ -187,15 +189,21 @@ namespace casioemu
 		if(run_mode != RM_STOP) {
 			if(++HSCLKTickCounter >= ClockDiv) {
 				HSCLKTick = true;
-				if(++HSCLKTimeCounter >= HTBROutputCount) {
-					data_HTBR++;
-					HSCLKTimeCounter = 0;
-				}
+				HSCLKTickCounter = 0;
 				if(++SYSCLKTickCounter >= 2) {
 					SYSCLKTick = true;
 					SYSCLKTickCounter = 0;
 				}
-				HSCLKTickCounter = 0;
+				if(HTBCReset) {
+					HTBCReset = false;
+				} else {
+					HSCLK_output = 0;
+					if(++HSCLKTimeCounter >= HTBROutputCount) {
+						data_HTBR++;
+						HSCLK_output = (data_HTBR - 1) & (~data_HTBR);
+						HSCLKTimeCounter = 0;
+					}
+				}
 			}
 		}
 
@@ -224,6 +232,7 @@ namespace casioemu
 		data_LTBR = 0;
 		data_HTBR = 0;
 		LSCLK_output = 0;
+		HSCLK_output = 0;
 		data_LTBADJ = 0;
 
 		ClockDiv = 1;
@@ -285,6 +294,7 @@ namespace casioemu
 		peripherals.push_front(new PowerSupply(emulator));
 		peripherals.push_front(new TimerBaseCounter(emulator));
 		peripherals.push_front(new RealTimeClock(emulator));
+		peripherals.push_front(new WatchdogTimer(emulator));
 		if (emulator.hardware_id == HW_CLASSWIZ_II)
 			peripherals.push_front(new BCDCalc(emulator));
 	}

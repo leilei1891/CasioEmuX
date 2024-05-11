@@ -414,7 +414,7 @@ function geti(adr)
 	return data[adr+1] << 8 | data[adr]
 end
 
-function s() emu:tick() ppc() end
+function s() emu:tick() emu:tick() ppc() end
 
 local hexadigit = '[0-9A-F]'
 -- hexadecimal digits, 4 <= len <= 6
