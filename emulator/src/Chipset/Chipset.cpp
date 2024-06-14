@@ -46,6 +46,8 @@ namespace casioemu
 		for (auto segment_index : emulator.hardware_id == HW_ES_PLUS ? segments_es_plus : emulator.hardware_id == HW_CLASSWIZ ? segments_classwiz : segments_classwiz_ii)
 			mmu.GenerateSegmentDispatch(segment_index);
 
+		real_hardware = emulator.GetModelInfo("real_hardware");
+
 		ConstructPeripherals();
 	}
 
@@ -186,6 +188,15 @@ namespace casioemu
 	}
 
 	void Chipset::GenerateTickForClock() {
+		if(!real_hardware) {
+			if(++SYSCLKTickCounter >= 2) {
+				SYSCLKTick = true;
+				SYSCLKTickCounter = 0;
+			}
+			HSCLKTick = LSCLKTick = SYSCLKTick;
+			return;
+		}
+		
 		//Generate HSCLK Tick
 		if(run_mode != RM_STOP) {
 			if(++HSCLKTickCounter >= ClockDiv) {

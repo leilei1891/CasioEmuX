@@ -71,6 +71,8 @@ namespace casioemu
 		long long LSCLKTickCounter, HSCLKTickCounter, HSCLKTimeCounter, SYSCLKTickCounter, LSCLKTimeCounter, LSCLKThresh;
 		int LSCLKFreqAddition;
 
+		bool real_hardware;
+
 	public:
 		Chipset(Emulator &emulator);
 		void Setup(); // must be called after emulator.hardware_id is initialized
