@@ -37,13 +37,14 @@ namespace casioemu
 		switch (emulator.hardware_id)
 		{
 		case HW_ES_PLUS:
-			n_byte = 2;
+		case HW_FX_5800P:
+			n_byte = 1;
 			break;
 		case HW_CLASSWIZ:
-			n_byte = 7;
+			n_byte = 5;
 			break;
 		case HW_CLASSWIZ_II:
-			n_byte = 7;
+			n_byte = 5;
 			break;
 		default:
 			PANIC("Unknown hardware_id\n");
@@ -54,7 +55,6 @@ namespace casioemu
 			stream << "Miscellaneous/Unknown/" << std::hex << std::uppercase << addr[i] << "*1";
 			region[i].Setup(addr[i], 1, stream.str(), &data[i], MMURegion::DefaultRead<uint8_t>, MMURegion::DefaultWrite<uint8_t>, emulator);
 		}
-		region_F220.Setup(0xF220, 4, "Miscellaneous/Unknown/F220*4", &data_F220, MMURegion::DefaultRead<uint32_t>, MMURegion::DefaultWrite<uint32_t>, emulator);
 	}
 
 	void Miscellaneous::Tick() {
