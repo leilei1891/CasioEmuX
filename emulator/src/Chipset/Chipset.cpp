@@ -20,6 +20,7 @@
 #include "../Peripheral/RealTimeClock.hpp"
 #include "../Peripheral/WatchdogTimer.hpp"
 #include "../Peripheral/ExternalInterrupts.hpp"
+#include "../Peripheral/IOPorts.hpp"
 
 #include "../Gui/ui.hpp"
 
